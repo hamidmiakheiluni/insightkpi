@@ -1,0 +1,56 @@
+<!doctype html>
+<html>
+<head>
+  <title>InsightKPI | Register</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar__inner">
+    <div class="brand">
+      <span class="brand-badge"></span>
+      InsightKPI
+    </div>
+    <div class="nav-links">
+      <a class="nav-link primary" href="/login">Login</a>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="card">
+    <h2>Create an account</h2>
+    <p class="subtitle">Register to store and visualise your business KPIs.</p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form method="post" class="form">
+      <div>
+        <label class="label">Email</label>
+        <input class="input" name="email" type="email" placeholder="name@company.com" required>
+      </div>
+
+      <div>
+        <label class="label">Password</label>
+        <input class="input" name="password" type="password" placeholder="Create a strong password" required>
+      </div>
+
+      <button class="btn" type="submit">Create account</button>
+
+      <p class="small">
+        Already have an account?
+        <a href="/login">Login</a>
+      </p>
+    </form>
+  </div>
+</div>
+
+</body>
+</html>
