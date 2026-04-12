@@ -9,13 +9,10 @@
 
 <div class="topbar">
   <div class="topbar__inner">
-    <div class="brand">
-      <span class="brand-badge"></span>
-      InsightKPI
-    </div>
+    <div class="brand">InsightKPI</div>
     <div class="nav-links">
-      <a class="nav-link primary" href="/kpi/add">Add KPI</a>
       <a class="nav-link" href="/dashboard">Dashboard</a>
+      <a class="nav-link primary" href="/kpi/add">Add KPI</a>
       <a class="nav-link" href="/help">Help</a>
       <a class="nav-link" href="/logout">Logout</a>
     </div>
@@ -24,21 +21,24 @@
 
 <div class="container">
   <div class="card">
+
     <h2>Welcome back 👋</h2>
+
     <p class="subtitle">
-      Signed in as <b>{{ current_user.email }}</b>. Track progress, spot what’s lacking, and see what’s doing well.
+      Signed in as <b>{{ current_user.email }}</b>
     </p>
 
-    <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:16px;">
-      <a class="btn" href="/kpi/add" style="text-decoration:none; display:inline-block;">Add a KPI</a>
-      <a class="btn" href="/dashboard" style="text-decoration:none; display:inline-block; background:#111827;">View dashboard</a>
+    <div style="margin-top:20px; display:flex; gap:10px;">
+      <a class="btn" href="/dashboard">Go to Dashboard</a>
+      <a class="btn" style="background:#22c55e;" href="/kpi/add">Add KPI</a>
     </div>
 
-    <hr style="margin:18px 0;">
+    <hr>
 
-    <p class="small" style="margin:0;">
-      Tip: Use the dashboard filters to focus on a KPI and date range, then check the “Behind Target” list.
+    <p class="subtitle">
+      Track business performance, monitor KPIs, and gain insights instantly.
     </p>
+
   </div>
 </div>
 

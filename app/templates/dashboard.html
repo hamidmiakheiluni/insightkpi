@@ -159,11 +159,21 @@ if (labels.length > 0) {
       datasets: [{
         label: "KPI Trend",
         data: values,
-        borderColor: "#2563eb",
-        backgroundColor: "rgba(37,99,235,0.1)",
+        borderColor: "#3b82f6",
+        backgroundColor: "rgba(59,130,246,0.1)",
         fill: true,
-        tension: 0.4
+        tension: 0.4,
+        pointRadius: 4
       }]
+    },
+    options: {
+      plugins: {
+        legend: { display: false }
+      },
+      scales: {
+        x: { grid: { display: false } },
+        y: { grid: { color: "#1f2937" } }
+      }
     }
   });
 }
