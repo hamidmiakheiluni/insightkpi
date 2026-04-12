@@ -344,3 +344,58 @@ hr {
   font-weight: 900;
   margin-top: 6px;
 }
+
+/* DASHBOARD IMPROVEMENTS */
+
+.container {
+  max-width: 1200px;
+}
+
+.card + .card {
+  margin-top: 16px;
+}
+
+h3 {
+  margin-top: 0;
+}
+
+/* FILTERS */
+.filter-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  align-items: end;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  font-size: 13px;
+  margin-bottom: 6px;
+  color: var(--muted);
+}
+
+.form-group input,
+.form-group select {
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+
+.form-actions {
+  display: flex;
+  align-items: end;
+}
+
+/* ACTIVE NAV */
+.nav-link.active {
+  background: rgba(255,255,255,0.2);
+}
+
+/* CHART */
+canvas {
+  margin-top: 10px;
+}
