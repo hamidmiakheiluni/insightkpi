@@ -15,10 +15,8 @@
       InsightKPI
     </div>
     <div class="nav-links">
-      <!-- ✅ NEW -->
       <a class="nav-link" href="/">Home</a>
       <a class="nav-link" href="/dashboard">Dashboard</a>
-
       <a class="nav-link primary" href="/kpi/add">Add KPI</a>
       <a class="nav-link" href="/export/pdf">Export PDF</a>
       <a class="nav-link" href="/export/csv">Export CSV</a>
@@ -34,7 +32,36 @@
     <h2>Dashboard</h2>
     <p class="subtitle">Track, visualise, and evaluate KPI performance against targets.</p>
 
-    <!-- ✅ Behind Target list -->
+    <!-- 🔥 KPI SUMMARY CARDS -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-title">Total KPIs</div>
+        <div class="stat-value">{{ card_stats|length }}</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-title">On Track</div>
+        <div class="stat-value">
+          {{ card_stats.values() | selectattr('status','equalto','green') | list | length }}
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-title">Warning</div>
+        <div class="stat-value">
+          {{ card_stats.values() | selectattr('status','equalto','amber') | list | length }}
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-title">Behind</div>
+        <div class="stat-value">
+          {{ card_stats.values() | selectattr('status','equalto','red') | list | length }}
+        </div>
+      </div>
+    </div>
+
+    <!-- ✅ Behind Target list (YOUR ORIGINAL KEPT) -->
     {% if behind_target and behind_target|length > 0 %}
       <div class="behind-box">
         <div class="behind-title">Behind Target</div>
@@ -66,7 +93,6 @@
     <div class="view-toggle">
       <span class="small" style="font-weight:900; color:#374151;">View as:</span>
 
-      <!-- ✅ CHANGED: / -> /dashboard -->
       <a class="view-pill {{ 'active' if view=='chart' else '' }}"
          href="/dashboard?view=chart&kpi_name={{ selected_kpi }}&start={{ start }}&end={{ end }}">Chart</a>
 
@@ -78,13 +104,12 @@
     </div>
 
     {% if entries|length == 0 %}
-      <p class="small">No KPI data yet. Add some KPIs to see evaluation and trends.</p>
+      <div class="flash info">
+        No KPI data yet — add your first KPI to unlock insights and performance tracking.
+      </div>
     {% else %}
 
       {% if view == "chart" %}
-        <p class="small" style="margin-top:0;">
-          Chart shows <b>average KPI value per day</b> (overview based on filters).
-        </p>
         <canvas id="kpiChart"></canvas>
 
         <script>
@@ -97,7 +122,11 @@
               labels: labels,
               datasets: [{
                 label: "Average KPI Value per Day",
-                data: values
+                data: values,
+                borderColor: "#2563eb",
+                backgroundColor: "rgba(37,99,235,0.1)",
+                fill: true,
+                tension: 0.4
               }]
             }
           });
@@ -107,30 +136,15 @@
       {% if view == "cards" %}
         <div style="display:grid; gap:14px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); margin-bottom: 10px;">
           {% for name, s in card_stats.items() %}
-            <div class="card" style="padding:16px; box-shadow:none;">
-              <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
-                <div style="font-weight:950;">{{ name }}</div>
-                <div>
-                  <span class="badge {{ s.status }}">{{ s.status|upper }}</span>
-                </div>
+            <div class="card" style="padding:16px;">
+              <div style="display:flex; justify-content:space-between;">
+                <b>{{ name }}</b>
+                <span class="badge {{ s.status }}">{{ s.status|upper }}</span>
               </div>
 
-              <div style="font-size:28px; font-weight:950; margin-top:8px;">
+              <div style="font-size:28px; font-weight:900;">
                 {{ "%.2f"|format(s.latest) }}
               </div>
-
-              <div class="small" style="margin-top:4px;">
-                {% if s.target is not none %}
-                  Target: {{ "%.2f"|format(s.target) }} |
-                  Rule: {{ "Higher" if s.direction=="higher" else "Lower" }} is better |
-                  <!-- ✅ WORDING CHANGE -->
-                  Warning buffer: {{ "%.1f"|format(s.tolerance_pct) }}%
-                {% else %}
-                  No target set (status unknown)
-                {% endif %}
-              </div>
-
-              <hr>
 
               <div class="small">
                 Avg: {{ "%.2f"|format(s.avg) }} |
@@ -138,11 +152,16 @@
                 Max: {{ "%.2f"|format(s.max) }}
               </div>
 
-              <div class="small" style="margin-top:6px;">
+              <div class="small">
                 {% if s.trend_pct is not none %}
-                  Trend vs previous period: <b>{{ "%.1f"|format(s.trend_pct) }}%</b>
+                  Trend: {{ "%.1f"|format(s.trend_pct) }}%
+                  {% if s.trend_pct > 0 %}
+                    📈 Improving
+                  {% else %}
+                    📉 Declining
+                  {% endif %}
                 {% else %}
-                  Trend vs previous period: <span style="color:#6b7280;">Not enough data</span>
+                  No trend data
                 {% endif %}
               </div>
             </div>
@@ -151,18 +170,11 @@
       {% endif %}
 
       {% if view == "multiples" %}
-        <p class="small" style="margin-top:0;">
-          Small multiples show <b>per-KPI raw trends</b> for quick comparison (up to 6 KPIs).
-        </p>
-
         <div style="display:grid; gap:14px; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));">
           {% for name, points in series.items() %}
-            <div class="card" style="padding:16px; box-shadow:none;">
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                <div style="font-weight:950;">{{ name }}</div>
-                <div class="small">{{ points|length }} pts</div>
-              </div>
-              <canvas id="mini_{{ loop.index }}" height="120"></canvas>
+            <div class="card">
+              <b>{{ name }}</b>
+              <canvas id="mini_{{ loop.index }}"></canvas>
             </div>
           {% endfor %}
         </div>
@@ -172,78 +184,23 @@
           let i = 1;
 
           for (const [name, points] of Object.entries(series)) {
-            const labels = points.map(p => p[0]);
-            const data = points.map(p => p[1]);
-
             new Chart(document.getElementById(`mini_${i}`), {
               type: "line",
               data: {
-                labels: labels,
+                labels: points.map(p => p[0]),
                 datasets: [{
-                  label: name,
-                  data: data,
-                  tension: 0.35
+                  data: points.map(p => p[1]),
+                  borderColor: "#2563eb",
+                  tension: 0.4
                 }]
-              },
-              options: {
-                responsive: true,
-                plugins: { legend: { display: false } },
-                scales: { x: { ticks: { maxTicksLimit: 5 } } }
               }
             });
-
             i++;
           }
         </script>
       {% endif %}
 
     {% endif %}
-
-    <hr>
-
-    <table>
-      <tr>
-        <th>KPI</th>
-        <th>Status</th>
-        <th>Date</th>
-        <th>Value</th>
-        <th>Target</th>
-        <th>Notes</th>
-        <th>Actions</th>
-      </tr>
-
-      {% for e in entries %}
-      <tr>
-        <td>{{ e.kpi_name }}</td>
-        <td>
-          {% set st = card_stats[e.kpi_name]["status"] if e.kpi_name in card_stats else "unknown" %}
-          <span class="badge {{ st }}">{{ st|upper }}</span>
-        </td>
-        <td>{{ e.kpi_date }}</td>
-        <td>{{ e.value }}</td>
-        <td>
-          {% if e.target_value is not none %}
-            {{ "%.2f"|format(e.target_value) }}
-          {% else %}
-            -
-          {% endif %}
-        </td>
-        <td>{{ e.notes }}</td>
-        <td style="white-space:nowrap;">
-          <a class="small" href="/kpi/{{ e.id }}">View</a>
-          &nbsp;|&nbsp;
-          <a class="small" href="/kpi/{{ e.id }}/edit">Edit</a>
-          &nbsp;|&nbsp;
-          <form method="post" action="/kpi/{{ e.id }}/delete" style="display:inline;"
-                onsubmit="return confirm('Delete this KPI entry?');">
-            <button type="submit" class="small" style="border:0;background:none;color:var(--danger);font-weight:900;cursor:pointer;">
-              Delete
-            </button>
-          </form>
-        </td>
-      </tr>
-      {% endfor %}
-    </table>
 
   </div>
 </div>
