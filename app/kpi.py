@@ -21,8 +21,8 @@ def add_kpi():
         notes = (request.form.get("notes") or "").strip()
 
         target_raw = (request.form.get("target_value") or "").strip()
-        direction = (request.form.get("direction") or "higher").strip().lower()
-        warning_buffer_raw = (request.form.get("tolerance_pct") or "5").strip()
+        direction = "higher"  # default
+        warning_buffer_pct = 5.0  # default
 
         if not name or not date_str or not value_raw:
             flash("Please fill in KPI name, date, and value.", "danger")

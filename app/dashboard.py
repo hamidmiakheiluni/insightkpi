@@ -134,6 +134,7 @@ def dashboard():
             "tolerance_pct": warning_buffer,
             "status": status,
             "trend_pct": change_pct,
+            "target": latest_entry.target_value if latest_entry else None,
         }
 
         if status in ("amber", "red"):

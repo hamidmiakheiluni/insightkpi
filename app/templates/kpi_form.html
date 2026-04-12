@@ -1,17 +1,14 @@
 <!doctype html>
 <html>
 <head>
-  <title>InsightKPI | {{ "Edit KPI" if mode=="edit" else "Add KPI" }}</title>
-  <link rel="stylesheet" href="/static/styles.css">
+  <title>InsightKPI | Add KPI</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
 
 <div class="topbar">
   <div class="topbar__inner">
-    <div class="brand">
-      <span class="brand-badge"></span>
-      InsightKPI
-    </div>
+    <div class="brand">InsightKPI</div>
     <div class="nav-links">
       <a class="nav-link" href="/">Home</a>
       <a class="nav-link" href="/dashboard">Dashboard</a>
@@ -24,94 +21,49 @@
 <div class="container">
 
   <div class="card">
-    <h2>{{ "Edit KPI entry" if mode=="edit" else "Add KPI entry" }}</h2>
-    <p class="subtitle">
-      {{ "Update a metric and its evaluation settings." if mode=="edit" else "Record a metric and optionally evaluate it against a target." }}
-    </p>
+    <h2>Add KPI</h2>
+    <p class="subtitle">Track a key business metric in seconds</p>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        {% for category, message in messages %}
-          <div class="flash {{ category }}">{{ message }}</div>
-        {% endfor %}
-      {% endif %}
+      {% for category, message in messages %}
+        <div class="flash {{ category }}">{{ message }}</div>
+      {% endfor %}
     {% endwith %}
 
     <form method="post" class="form">
 
-      <div class="row two">
-        <div>
-          <label class="label">KPI Name</label>
-          <input class="input" name="kpi_name" placeholder="Sales, Profit, Customers..." required
-                 value="{{ entry.kpi_name if entry else '' }}">
-        </div>
-
-        <div>
-          <label class="label">Date</label>
-          <input class="input" type="date" name="kpi_date" required
-                 value="{{ entry.kpi_date.isoformat() if entry else '' }}">
-        </div>
+      <div class="form-group">
+        <label>KPI Name</label>
+        <input name="kpi_name" placeholder="Sales, Profit, Customers..." required>
       </div>
 
-      <div class="row two">
-        <div>
-          <label class="label">Value</label>
-          <input class="input" name="value" placeholder="e.g., 1200" required
-                 value="{{ entry.value if entry else '' }}">
-        </div>
-
-        <div>
-          <label class="label">Notes (optional)</label>
-          <input class="input" name="notes" placeholder="Any context..."
-                 value="{{ entry.notes if entry and entry.notes else '' }}">
-        </div>
+      <div class="form-group">
+        <label>Date</label>
+        <input type="date" name="kpi_date" required>
       </div>
 
-      <hr>
-
-      <h3 style="margin:0 0 10px;">Evaluation settings (optional)</h3>
-      <p class="small" style="margin-top:0;">
-        Add a target and rule so InsightKPI can show Green/Amber/Red performance.
-      </p>
-
-      <div class="row two">
-        <div>
-          <label class="label">Target value</label>
-          <input class="input" name="target_value" placeholder="e.g., 1500 (leave blank if none)"
-                 value="{{ entry.target_value if entry and entry.target_value is not none else '' }}">
-        </div>
-
-        <div>
-          <label class="label">Direction rule</label>
-          <select class="input" name="direction" required>
-            <option value="higher" {{ "selected" if entry and entry.direction=="higher" else "" }}>Higher is better</option>
-            <option value="lower" {{ "selected" if entry and entry.direction=="lower" else "" }}>Lower is better</option>
-          </select>
-        </div>
+      <div class="form-group">
+        <label>Value</label>
+        <input name="value" placeholder="e.g. 1200" required>
       </div>
 
-      <div class="row two">
-        <div>
-          <label class="label">Warning buffer (%)</label>
-          <input class="input" name="tolerance_pct" placeholder="e.g., 5"
-                 value="{{ entry.tolerance_pct if entry and entry.tolerance_pct is not none else 5 }}">
-          <p class="small" style="margin-top:8px;">
-            If the KPI is within this % of the target, it will show as <b>Amber</b>.
-          </p>
-        </div>
-        <div></div>
+      <div class="form-group">
+        <label>Target (optional)</label>
+        <input name="target_value" placeholder="e.g. 1500">
       </div>
 
-      <button class="btn" type="submit">{{ "Save Changes" if mode=="edit" else "Save KPI" }}</button>
+      <div class="form-group">
+        <label>Notes (optional)</label>
+        <input name="notes" placeholder="Any context...">
+      </div>
 
-      {% if mode == "edit" and entry %}
-        <p class="small" style="margin:10px 0 0;">
-          <a href="/kpi/{{ entry.id }}">View entry</a>
-        </p>
-      {% endif %}
+      <button class="btn">Save KPI</button>
+
     </form>
+
   </div>
 
 </div>
+
 </body>
 </html>

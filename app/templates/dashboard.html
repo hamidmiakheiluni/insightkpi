@@ -127,23 +127,65 @@
 
   <!-- INSIGHTS -->
   <div class="card">
-    <h3>Insights</h3>
+  <h3>Smart Insights</h3>
 
-    <ul class="behind-list">
-      {% for name, s in card_stats.items() %}
-        {% if s.trend_pct %}
-        <li>
-          <b>{{ name }}</b>:
-          {% if s.trend_pct > 0 %}
-            📈 improving ({{ "%.1f"|format(s.trend_pct) }}%)
+  <ul class="behind-list">
+    {% for name, s in card_stats.items() %}
+
+      <li>
+
+        <b>{{ name }}</b>:
+
+        {% if s.latest and s.target %}
+
+          {% if s.latest >= s.target %}
+            above target
           {% else %}
-            📉 declining ({{ "%.1f"|format(s.trend_pct) }}%)
+            below target
           {% endif %}
-        </li>
+
         {% endif %}
-      {% endfor %}
-    </ul>
-  </div>
+
+        {% if s.trend_pct %}
+          {% if s.trend_pct > 0 %}
+            and improving 📈
+          {% else %}
+            and declining 📉
+          {% endif %}
+        {% endif %}
+
+        <br>
+
+        <span class="small">
+
+          {% if s.latest and s.target %}
+
+            {% if s.latest >= s.target and s.trend_pct and s.trend_pct > 0 %}
+              Great performance — keep current strategy.
+
+            {% elif s.latest >= s.target %}
+              Good results, but monitor for changes.
+
+            {% elif s.latest < s.target and s.trend_pct and s.trend_pct < 0 %}
+              Action needed — performance is worsening.
+
+            {% else %}
+              Slightly below target — consider small improvements.
+
+            {% endif %}
+
+          {% else %}
+            Add a target to unlock performance insights.
+
+          {% endif %}
+
+        </span>
+
+      </li>
+
+    {% endfor %}
+  </ul>
+</div>
 
 </div>
 
