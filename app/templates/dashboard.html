@@ -3,23 +3,18 @@
 <head>
   <meta charset="utf-8">
   <title>InsightKPI | Dashboard</title>
-  <link rel="stylesheet" href="/static/styles.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 
 <div class="topbar">
   <div class="topbar__inner">
-    <div class="brand">
-      <span class="brand-badge"></span>
-      InsightKPI
-    </div>
+    <div class="brand">InsightKPI</div>
     <div class="nav-links">
       <a class="nav-link" href="/">Home</a>
       <a class="nav-link active" href="/dashboard">Dashboard</a>
       <a class="nav-link primary" href="/kpi/add">Add KPI</a>
-      <a class="nav-link" href="/export/pdf">PDF</a>
-      <a class="nav-link" href="/export/csv">CSV</a>
       <a class="nav-link" href="/help">Help</a>
       <a class="nav-link" href="/logout">Logout</a>
     </div>
@@ -30,42 +25,50 @@
 
   <!-- HEADER -->
   <div class="card">
-  <h2>Dashboard</h2>
-    <p class="subtitle">Track KPI performance, trends, and business insights.</p>
+    <h2>Dashboard</h2>
+    <p class="subtitle">Monitor KPI performance and business insights</p>
   </div>
 
-  <!-- SUMMARY CARDS -->
+  <!-- KPI CARDS -->
   <div class="stats-grid">
-    <div class="stat-card">
-      <div class="stat-title">Total KPIs</div>
-      <div class="stat-value">{{ card_stats|length }}</div>
-    </div>
+    {% for name, s in card_stats.items() %}
+      <div class="stat-card status-{{ s.status }}">
 
-    <div class="stat-card">
-      <div class="stat-title">On Track</div>
-      <div class="stat-value">
-        {{ card_stats.values() | selectattr('status','equalto','green') | list | length }}
-      </div>
-    </div>
+        <div class="stat-title">{{ name }}</div>
 
-    <div class="stat-card">
-      <div class="stat-title">Warning</div>
-      <div class="stat-value">
-        {{ card_stats.values() | selectattr('status','equalto','amber') | list | length }}
-      </div>
-    </div>
+        <div class="stat-value">
+          {{ "%.2f"|format(s.latest) }}
+        </div>
 
-    <div class="stat-card">
-      <div class="stat-title">Behind</div>
-      <div class="stat-value">
-        {{ card_stats.values() | selectattr('status','equalto','red') | list | length }}
+        <div class="small">
+          Avg: {{ "%.2f"|format(s.avg) }}
+        </div>
+
+        <div class="small">
+          {% if s.trend_pct %}
+            {% if s.trend_pct > 0 %}
+              📈 +{{ "%.1f"|format(s.trend_pct) }}%
+            {% else %}
+              📉 {{ "%.1f"|format(s.trend_pct) }}%
+            {% endif %}
+          {% else %}
+            No trend
+          {% endif %}
+        </div>
+
+        <div style="margin-top:8px;">
+          <span class="badge {{ s.status }}">
+            {{ s.status|upper }}
+          </span>
+        </div>
+
       </div>
-    </div>
+    {% endfor %}
   </div>
 
   <!-- FILTERS -->
   <div class="card">
-    <h3>Filter KPI Data</h3>
+    <h3>Filters</h3>
 
     <form method="GET" class="filter-form">
       <div class="form-group">
@@ -79,34 +82,32 @@
       </div>
 
       <div class="form-group">
-        <label>Start Date</label>
+        <label>Start</label>
         <input type="date" name="start" value="{{ start }}">
       </div>
 
       <div class="form-group">
-        <label>End Date</label>
+        <label>End</label>
         <input type="date" name="end" value="{{ end }}">
       </div>
 
-      <div class="form-actions">
+      <div class="form-group">
         <button class="btn">Apply</button>
       </div>
     </form>
   </div>
 
-  <!-- BEHIND TARGET -->
+  <!-- ALERTS -->
   {% if behind_target %}
   <div class="card">
-    <h3>⚠️ Needs Attention</h3>
+    <h3>⚠ Needs Attention</h3>
 
     <ul class="behind-list">
       {% for k in behind_target %}
       <li class="behind-item">
         <b>{{ k.name }}</b>
         <span class="badge {{ k.status }}">{{ k.status|upper }}</span>
-        <span class="small">
-          {{ "%.2f"|format(k.latest) }}
-        </span>
+        <span class="small">{{ "%.2f"|format(k.latest) }}</span>
       </li>
       {% endfor %}
     </ul>
@@ -115,13 +116,12 @@
 
   <!-- CHART -->
   <div class="card">
-    <h3>KPI Trend Overview</h3>
-    <p class="small">Daily average performance</p>
+    <h3>KPI Trend</h3>
 
     {% if entries %}
       <canvas id="kpiChart"></canvas>
     {% else %}
-      <div class="flash info">No data available</div>
+      <div class="flash info">No KPI data yet</div>
     {% endif %}
   </div>
 
@@ -135,9 +135,9 @@
         <li>
           <b>{{ name }}</b>:
           {% if s.trend_pct > 0 %}
-            📈 Improving ({{ "%.1f"|format(s.trend_pct) }}%)
+            📈 improving ({{ "%.1f"|format(s.trend_pct) }}%)
           {% else %}
-            📉 Declining ({{ "%.1f"|format(s.trend_pct) }}%)
+            📉 declining ({{ "%.1f"|format(s.trend_pct) }}%)
           {% endif %}
         </li>
         {% endif %}
@@ -157,7 +157,6 @@ if (labels.length > 0) {
     data: {
       labels: labels,
       datasets: [{
-        label: "KPI Trend",
         data: values,
         borderColor: "#3b82f6",
         backgroundColor: "rgba(59,130,246,0.1)",
