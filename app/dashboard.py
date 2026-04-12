@@ -5,15 +5,15 @@ from .models import KPIEntry
 
 dash_bp = Blueprint("dash", __name__)
 
+
 def evaluate_status(value: float, target: float, direction: str, warning_buffer_pct: float) -> str:
     """
     Returns: 'green' | 'amber' | 'red' | 'unknown'
-    warning_buffer_pct = the % near-target range that counts as Amber.
     """
     if target is None:
         return "unknown"
 
-    tol = (warning_buffer_pct / 100.0) * target
+    tol = abs((warning_buffer_pct / 100.0) * target)
     direction = (direction or "higher").lower()
 
     if direction == "higher":
@@ -32,32 +32,29 @@ def evaluate_status(value: float, target: float, direction: str, warning_buffer_
     else:
         return "red"
 
+
 def pct_change(current: float, previous: float):
     if previous in (None, 0):
         return None
     return ((current - previous) / previous) * 100.0
 
+
 @dash_bp.route("/")
 @login_required
 def home():
-    """Welcome / home page after login."""
     return render_template("home.html")
+
 
 @dash_bp.route("/dashboard")
 @login_required
 def dashboard():
-    # Filters
     kpi_filter = (request.args.get("kpi_name") or "").strip()
-    start = request.args.get("start")  # YYYY-MM-DD
-    end = request.args.get("end")      # YYYY-MM-DD
-
-    # View mode (chart | cards | multiples)
+    start = request.args.get("start")
+    end = request.args.get("end")
     view = (request.args.get("view") or "chart").strip().lower()
 
-    # Base query for this user
     q = KPIEntry.query.filter_by(user_id=current_user.id)
 
-    # Apply optional filters
     if kpi_filter:
         q = q.filter(KPIEntry.kpi_name == kpi_filter)
     if start:
@@ -67,7 +64,6 @@ def dashboard():
 
     entries = q.order_by(KPIEntry.kpi_date.asc()).all()
 
-    # KPI dropdown list
     all_kpis = (
         KPIEntry.query.filter_by(user_id=current_user.id)
         .with_entities(KPIEntry.kpi_name)
@@ -76,7 +72,6 @@ def dashboard():
     )
     kpi_names = [row[0] for row in all_kpis]
 
-    # ---- CHART DATA: aggregated overview (daily average of filtered results) ----
     daily = defaultdict(list)
     for e in entries:
         daily[e.kpi_date.isoformat()].append(float(e.value))
@@ -84,14 +79,13 @@ def dashboard():
     labels = sorted(daily.keys())
     values = [round(sum(vals) / len(vals), 2) for _, vals in sorted(daily.items())]
 
-    # ---- Per-KPI series for cards + multiples ----
-    series = defaultdict(list)          # {kpi: [(date, value), ...]}
-    series_entries = defaultdict(list)  # {kpi: [entry_obj, ...]}
+    series = defaultdict(list)
+    series_entries = defaultdict(list)
+
     for e in entries:
         series[e.kpi_name].append((e.kpi_date.isoformat(), float(e.value)))
         series_entries[e.kpi_name].append(e)
 
-    # ---- Cards stats + status + trend % change ----
     card_stats = {}
     behind_target = []
 
@@ -101,12 +95,11 @@ def dashboard():
 
         last_entry = series_entries[name][-1]
         target = last_entry.target_value
-        direction = last_entry.direction
-        warning_buffer = last_entry.tolerance_pct  # DB stays tolerance_pct
+        direction = last_entry.direction or "higher"
+        warning_buffer = last_entry.tolerance_pct if last_entry.tolerance_pct is not None else 5.0
 
         status = evaluate_status(latest_val, target, direction, warning_buffer)
 
-        # Trend: compare average of last half vs previous half
         n = len(vals)
         half = max(1, n // 2)
         current_slice = vals[-half:]
@@ -134,7 +127,6 @@ def dashboard():
             "tolerance_pct": warning_buffer,
             "status": status,
             "trend_pct": change_pct,
-            "target": latest_entry.target_value if latest_entry else None,
         }
 
         if status in ("amber", "red"):
@@ -147,7 +139,6 @@ def dashboard():
             })
 
     behind_target.sort(key=lambda x: 0 if x["status"] == "red" else 1)
-
     series_limited = dict(list(series.items())[:6])
 
     return render_template(
@@ -164,6 +155,7 @@ def dashboard():
         series=series_limited,
         behind_target=behind_target,
     )
+
 
 @dash_bp.route("/help")
 @login_required

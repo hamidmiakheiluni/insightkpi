@@ -125,67 +125,67 @@
     {% endif %}
   </div>
 
-  <!-- INSIGHTS -->
+  <!-- SMART INSIGHTS (SAFE VERSION) -->
   <div class="card">
-  <h3>Smart Insights</h3>
+    <h3>Smart Insights</h3>
 
-  <ul class="behind-list">
-    {% for name, s in card_stats.items() %}
+    <ul class="behind-list">
+      {% for name, s in card_stats.items() %}
 
-      <li>
+        <li>
 
-        <b>{{ name }}</b>:
+          <b>{{ name }}</b>:
 
-        {% if s.latest and s.target %}
+          {% if s.target is defined and s.target %}
 
-          {% if s.latest >= s.target %}
-            above target
-          {% else %}
-            below target
+            {% if s.latest >= s.target %}
+              above target
+            {% else %}
+              below target
+            {% endif %}
+
           {% endif %}
 
-        {% endif %}
-
-        {% if s.trend_pct %}
-          {% if s.trend_pct > 0 %}
-            and improving 📈
-          {% else %}
-            and declining 📉
+          {% if s.trend_pct %}
+            {% if s.trend_pct > 0 %}
+              and improving 📈
+            {% else %}
+              and declining 📉
+            {% endif %}
           {% endif %}
-        {% endif %}
 
-        <br>
+          <br>
 
-        <span class="small">
+          <span class="small">
 
-          {% if s.latest and s.target %}
+            {% if s.target is defined and s.target %}
 
-            {% if s.latest >= s.target and s.trend_pct and s.trend_pct > 0 %}
-              Great performance — keep current strategy.
+              {% if s.latest >= s.target and s.trend_pct and s.trend_pct > 0 %}
+                Great performance — keep current strategy.
 
-            {% elif s.latest >= s.target %}
-              Good results, but monitor for changes.
+              {% elif s.latest >= s.target %}
+                Good results, monitor closely.
 
-            {% elif s.latest < s.target and s.trend_pct and s.trend_pct < 0 %}
-              Action needed — performance is worsening.
+              {% elif s.latest < s.target and s.trend_pct and s.trend_pct < 0 %}
+                Action needed — performance is worsening.
+
+              {% else %}
+                Slightly below target — consider improvements.
+
+              {% endif %}
 
             {% else %}
-              Slightly below target — consider small improvements.
+              Add a target to unlock insights.
 
             {% endif %}
 
-          {% else %}
-            Add a target to unlock performance insights.
+          </span>
 
-          {% endif %}
+        </li>
 
-        </span>
-
-      </li>
-
-    {% endfor %}
-  </ul>
-</div>
+      {% endfor %}
+    </ul>
+  </div>
 
 </div>
 
