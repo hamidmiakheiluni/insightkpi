@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<!-- EDIT KPI FORM -->
+<!-- Pre-filled with the existing values for this entry -->
+<!-- Submits to the edit_kpi route in kpi.py -->
+<div class="card">
+  <h2>Edit KPI</h2>
+
+  <form method="POST">
+
+    <!-- Pre-filled with the current KPI name -->
+    <div class="form-group">
+      <label>KPI Name</label>
+      <input type="text" name="kpi_name" value="{{ entry.kpi_name }}" required>
+    </div>
+
+    <!-- Pre-filled with the current date -->
+    <div class="form-group">
+      <label>Date</label>
+      <input type="date" name="kpi_date" value="{{ entry.kpi_date }}" required>
+    </div>
+
+    <!-- Pre-filled with the current value -->
+    <div class="form-group">
+      <label>Value</label>
+      <input type="number" step="any" name="value" value="{{ entry.value }}" required>
+    </div>
+
+    <!-- Pre-filled with the current target, can be left blank if no target -->
+    <div class="form-group">
+      <label>Target</label>
+      <input type="number" step="any" name="target_value" value="{{ entry.target_value }}">
+    </div>
+
+    <!-- Submit saves the changes via the edit_kpi POST route -->
+    <button class="btn">Update KPI</button>
+
+  </form>
+</div>
+
+{% endblock %}

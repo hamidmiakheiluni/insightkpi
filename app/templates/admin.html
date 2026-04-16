@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<!-- ADMIN DASHBOARD HEADER -->
+<div class="card">
+  <h2>Admin Dashboard</h2>
+  <p class="subtitle">Manage all users, KPIs, and recent activity</p>
+</div>
+
+<!-- SUMMARY STATS - three quick totals at the top -->
+<!-- These numbers come from admin.py admin_dashboard route -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-title">Total Users</div>
+    <div class="stat-value">{{ total_users }}</div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-title">Total KPIs</div>
+    <div class="stat-value">{{ total_kpis }}</div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-title">Admin Accounts</div>
+    <div class="stat-value">{{ total_admins }}</div>
+  </div>
+</div>
+
+<!-- USERS TABLE -->
+<!-- Lists every user with edit and delete buttons -->
+<div class="card">
+  <h3>Users</h3>
+
+  <!-- Show any success or error flash messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <div class="flash {{ category }}">{{ message }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  {% if users %}
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Username</th>
+          <th>Email</th>
+          <th>Role</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for user in users %}
+        <tr>
+          <td>{{ user.id }}</td>
+          <td>{{ user.username }}</td>
+          <td>{{ user.email }}</td>
+          <td>
+            <!-- Show a green badge for admins and amber for regular users -->
+            {% if user.is_admin %}
+              <span class="badge green">ADMIN</span>
+            {% else %}
+              <span class="badge amber">USER</span>
+            {% endif %}
+          </td>
+          <td style="text-align:right;">
+            <div style="display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap;">
+              <!-- Edit button takes admin to the edit user page -->
+              <a class="btn" href="{{ url_for('admin.edit_user', user_id=user.id) }}">Edit</a>
+
+              <!-- Only show delete button for other users, not the admin's own account -->
+              {% if user.id != current_user.id %}
+                <form method="POST" action="{{ url_for('admin.delete_user', user_id=user.id) }}"
+                      onsubmit="return confirm('Delete this user and all of their KPI data?');"
+                      style="display:inline;">
+                  <button class="btn" type="submit" style="background:#ef4444;">Delete</button>
+                </form>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>No users found.</p>
+  {% endif %}
+</div>
+
+<!-- ALL KPI ENTRIES TABLE -->
+<!-- Shows every KPI entry in the system across all users -->
+<div class="card">
+  <h3>All KPI Entries</h3>
+
+  {% if kpis %}
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>User ID</th>
+          <th>KPI</th>
+          <th>Date</th>
+          <th>Value</th>
+          <th>Target</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for kpi in kpis %}
+        <tr>
+          <td>{{ kpi.id }}</td>
+          <td>{{ kpi.user_id }}</td>
+          <td>{{ kpi.kpi_name }}</td>
+          <td>{{ kpi.kpi_date }}</td>
+          <td>{{ kpi.value }}</td>
+          <!-- Show a dash if no target was set for this KPI -->
+          <td>{{ kpi.target_value if kpi.target_value is not none else "-" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>No KPI entries found.</p>
+  {% endif %}
+</div>
+
+<!-- RECENT ACTIVITY TABLE -->
+<!-- Shows the last 100 actions taken by any user in the app -->
+<div class="card">
+  <h3>Recent Activity</h3>
+
+  {% if activities %}
+    <table>
+      <thead>
+        <tr>
+          <th>Time</th>
+          <th>User ID</th>
+          <th>Action</th>
+          <th>Details</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in activities %}
+        <tr>
+          <!-- Format the timestamp into a readable date and time -->
+          <td>{{ item.created_at.strftime("%Y-%m-%d %H:%M:%S") }}</td>
+          <td>{{ item.user_id }}</td>
+          <td>{{ item.action }}</td>
+          <td>{{ item.details }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>No activity recorded yet.</p>
+  {% endif %}
+</div>
+
+{% endblock %}

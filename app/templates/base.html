@@ -1,0 +1,54 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>InsightKPI</title>
+  <!-- Load the main stylesheet -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <!-- Load Chart.js from a CDN so we can draw graphs -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<!-- TOP NAVIGATION BAR -->
+<!-- This bar appears on every page that extends base.html -->
+<div class="topbar">
+  <div class="topbar__inner">
+    <div class="brand">InsightKPI</div>
+
+    <div class="nav-links">
+      <!-- Each link highlights itself if it matches the current page -->
+      <a class="nav-link {% if request.endpoint == 'dash.home' %}primary{% endif %}" 
+         href="{{ url_for('dash.home') }}">Home</a>
+
+      <a class="nav-link {% if request.endpoint == 'dash.dashboard' %}primary{% endif %}" 
+         href="{{ url_for('dash.dashboard') }}">Dashboard</a>
+
+      <a class="nav-link {% if request.endpoint == 'kpi.add_kpi' %}primary{% endif %}" 
+         href="{{ url_for('kpi.add_kpi') }}">Add KPI</a>
+
+      <a class="nav-link {% if request.endpoint == 'dash.help_page' %}primary{% endif %}" 
+         href="{{ url_for('dash.help_page') }}">Help</a>
+
+      <a class="nav-link {% if request.endpoint == 'auth.profile' %}primary{% endif %}" 
+         href="{{ url_for('auth.profile') }}">Profile</a>
+
+      <!-- Only show the Admin link if the logged in user is an admin -->
+      {% if current_user.is_authenticated and current_user.is_admin %}
+        <a class="nav-link {% if request.endpoint == 'admin.admin_dashboard' %}primary{% endif %}" 
+           href="{{ url_for('admin.admin_dashboard') }}">Admin</a>
+      {% endif %}
+
+      <a class="nav-link" href="{{ url_for('auth.logout') }}">Logout</a>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN CONTENT AREA -->
+<!-- Each page that extends this template fills in this block -->
+<div class="container">
+  {% block content %}{% endblock %}
+</div>
+
+</body>
+</html>

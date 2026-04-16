@@ -1,46 +1,85 @@
-<!doctype html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>InsightKPI | Home</title>
-  <link rel="stylesheet" href="/static/styles.css">
-</head>
-<body>
+{% extends "base.html" %}
 
-<div class="topbar">
-  <div class="topbar__inner">
-    <div class="brand">InsightKPI</div>
-    <div class="nav-links">
-      <a class="nav-link" href="/dashboard">Dashboard</a>
-      <a class="nav-link primary" href="/kpi/add">Add KPI</a>
-      <a class="nav-link" href="/help">Help</a>
-      <a class="nav-link" href="/logout">Logout</a>
+{% block content %}
+
+<!-- WELCOME CARD -->
+<!-- Shows a greeting and a quick overview of the user's KPI stats -->
+<div class="card">
+  <h2>Welcome back</h2>
+
+  <!-- Show the logged in user's name and email -->
+  <p class="subtitle">
+    Signed in as <b>{{ current_user.username }}</b> ({{ current_user.email }})
+  </p>
+
+  <!-- SUMMARY STATS - three quick numbers at a glance -->
+  <!-- These values come from dashboard.py home route -->
+  <div class="stats-grid" style="margin-top:15px;">
+    <div class="stat-card">
+      <div class="stat-title">Total KPIs</div>
+      <div class="stat-value">{{ total_kpis }}</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-title">On Track</div>
+      <div class="stat-value">{{ green_count }}</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-title">Behind</div>
+      <div class="stat-value">{{ red_count }}</div>
     </div>
   </div>
 </div>
 
-<div class="container">
-  <div class="card">
+<!-- EMPTY STATE -->
+<!-- Only shown if the user has not added any KPIs yet -->
+{% if total_kpis == 0 %}
+<div class="card" style="text-align:center;">
+  <h3>No KPIs yet</h3>
+  <p class="subtitle">Start tracking your business performance by adding your first KPI.</p>
+  <a href="{{ url_for('kpi.add_kpi') }}" class="btn">Add Your First KPI</a>
+</div>
+{% endif %}
 
-    <h2>Welcome back 👋</h2>
+<!-- QUICK ACTIONS CARD -->
+<!-- Shortcuts to the most common things users do -->
+<div class="card">
+  <h3>Quick Actions</h3>
 
-    <p class="subtitle">
-      Signed in as <b>{{ current_user.email }}</b>
-    </p>
+  <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;">
+    <a href="{{ url_for('kpi.add_kpi') }}" class="btn">Add KPI</a>
 
-    <div style="margin-top:20px; display:flex; gap:10px;">
-      <a class="btn" href="/dashboard">Go to Dashboard</a>
-      <a class="btn" style="background:#22c55e;" href="/kpi/add">Add KPI</a>
-    </div>
+    <a href="{{ url_for('dash.dashboard') }}" 
+       class="btn" 
+       style="background:#111827;">
+       View Dashboard
+    </a>
 
-    <hr>
-
-    <p class="subtitle">
-      Track business performance, monitor KPIs, and gain insights instantly.
-    </p>
-
+    <a href="{{ url_for('export.export_csv') }}" 
+       class="btn" 
+       style="background:#111827;">
+       Export Data
+    </a>
   </div>
 </div>
 
-</body>
-</html>
+<!-- PERFORMANCE OVERVIEW CARD -->
+<!-- A short text summary of how the user's KPIs are performing -->
+<div class="card">
+  <h3>Performance Overview</h3>
+
+  {% if total_kpis > 0 %}
+    <p class="subtitle">
+      You currently have <b>{{ total_kpis }}</b> KPI(s), 
+      with <b>{{ green_count }}</b> performing well and 
+      <b>{{ red_count }}</b> needing attention.
+    </p>
+  {% else %}
+    <p class="subtitle">
+      Your KPI insights will appear here once data is added.
+    </p>
+  {% endif %}
+</div>
+
+{% endblock %}

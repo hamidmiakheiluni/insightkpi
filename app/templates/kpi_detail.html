@@ -3,16 +3,15 @@
 <head>
   <meta charset="utf-8">
   <title>InsightKPI | KPI Entry</title>
+  <!-- Load the main stylesheet -->
   <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
 
+<!-- TOP NAVIGATION BAR -->
 <div class="topbar">
   <div class="topbar__inner">
-    <div class="brand">
-      <span class="brand-badge"></span>
-      InsightKPI
-    </div>
+    <div class="brand">InsightKPI</div>
     <div class="nav-links">
       <a class="nav-link" href="/">Home</a>
       <a class="nav-link" href="/dashboard">Dashboard</a>
@@ -24,9 +23,12 @@
 
 <div class="container">
   <div class="card">
+
+    <!-- Show the KPI name as the page title -->
     <h2>{{ entry.kpi_name }}</h2>
     <p class="subtitle">KPI entry details.</p>
 
+    <!-- Show any flash messages for example after a delete -->
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
         {% for category, message in messages %}
@@ -35,25 +37,34 @@
       {% endif %}
     {% endwith %}
 
+    <!-- Table showing all the details for this single KPI entry -->
     <table>
       <tr><th>Date</th><td>{{ entry.kpi_date }}</td></tr>
       <tr><th>Value</th><td>{{ entry.value }}</td></tr>
+      <!-- Show a dash if no target was set -->
       <tr><th>Target</th><td>{{ "%.2f"|format(entry.target_value) if entry.target_value is not none else "-" }}</td></tr>
+      <!-- Show a readable label for the direction setting -->
       <tr><th>Direction</th><td>{{ "Higher is better" if entry.direction=="higher" else "Lower is better" }}</td></tr>
+      <!-- The tolerance is the percentage buffer before status turns amber -->
       <tr><th>Warning buffer</th><td>{{ "%.1f"|format(entry.tolerance_pct) }}%</td></tr>
+      <!-- Show a dash if no notes were added -->
       <tr><th>Notes</th><td>{{ entry.notes if entry.notes else "-" }}</td></tr>
     </table>
 
     <hr>
 
+    <!-- ACTION BUTTONS - edit, delete, or go back -->
     <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <!-- Edit takes the user to the edit form for this entry -->
       <a class="btn" href="/kpi/{{ entry.id }}/edit" style="text-decoration:none; display:inline-block;">Edit</a>
 
+      <!-- Delete asks for confirmation before permanently removing the entry -->
       <form method="post" action="/kpi/{{ entry.id }}/delete"
             onsubmit="return confirm('Delete this KPI entry? This cannot be undone.');">
         <button class="btn" style="background: var(--danger);" type="submit">Delete</button>
       </form>
 
+      <!-- Back returns to the dashboard without making any changes -->
       <a class="btn" href="/dashboard" style="text-decoration:none; display:inline-block; background:#111827;">Back</a>
     </div>
   </div>

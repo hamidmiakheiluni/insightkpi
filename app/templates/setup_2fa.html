@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<!-- SETUP 2FA PAGE -->
+<!-- This page walks the user through enabling two-factor authentication -->
+<div class="card" style="max-width:520px; margin:40px auto;">
+
+  <h2>Set Up Two-Factor Authentication</h2>
+  <p class="subtitle">Scan the QR code below with your authenticator app, then enter the 6-digit code to confirm.</p>
+
+  <hr style="border-color: var(--border); margin: 20px 0;">
+
+  <!-- STEP 1 - Scan the QR code -->
+  <p style="font-weight:700; margin-bottom:6px;">Step 1 - Scan this QR code</p>
+  <p class="subtitle" style="margin-bottom:14px;">
+    Use <b>Google Authenticator</b>, <b>Authy</b>, or any TOTP app.
+  </p>
+
+  <!-- The QR code image is embedded as base64 directly in the page -->
+  <!-- qr_b64 is generated in auth.py using the pyotp and qrcode libraries -->
+  <div style="text-align:center; background:#fff; padding:16px; border-radius:14px; display:inline-block;">
+    <img src="data:image/png;base64,{{ qr_b64 }}" alt="QR Code" style="width:200px; height:200px;">
+  </div>
+
+  <!-- MANUAL KEY - shown if the user cannot scan the QR code -->
+  <!-- The secret is the raw text version that can be typed into the app manually -->
+  <details style="margin-top:16px;">
+    <summary style="cursor:pointer; color:var(--muted); font-size:13px;">
+      Cant scan? Enter the key manually
+    </summary>
+    <div style="
+      margin-top:10px;
+      background: var(--card-light);
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-family: monospace;
+      font-size: 15px;
+      letter-spacing: 3px;
+      color: var(--text);
+      word-break: break-all;
+    ">{{ secret }}</div>
+  </details>
+
+  <hr style="border-color: var(--border); margin: 24px 0;">
+
+  <!-- STEP 2 - Confirm with a code from the app -->
+  <!-- This proves the user scanned it correctly before we save anything -->
+  <p style="font-weight:700; margin-bottom:6px;">Step 2 - Confirm with your code</p>
+
+  <!-- Show any error messages for example wrong code entered -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <div class="flash {{ category }}">{{ message }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <!-- Form submits the code to the confirm_2fa route in auth.py -->
+  <form method="POST" action="{{ url_for('auth.confirm_2fa') }}">
+
+    <div class="form-group">
+      <label>6-Digit Code</label>
+      <input
+        name="code"
+        type="text"
+        inputmode="numeric"
+        pattern="[0-9]{6}"
+        maxlength="6"
+        placeholder="000000"
+        autofocus
+        required
+        style="font-size:22px; letter-spacing:6px; text-align:center;">
+    </div>
+
+    <div style="display:flex; gap:10px; margin-top:14px;">
+      <!-- Submit button saves the secret and turns on 2FA -->
+      <button class="btn" type="submit">Activate 2FA</button>
+      <!-- Cancel goes back to profile without saving anything -->
+      <a class="btn" href="{{ url_for('auth.profile') }}" style="background:#111827;">Cancel</a>
+    </div>
+
+  </form>
+
+</div>
+
+{% endblock %}

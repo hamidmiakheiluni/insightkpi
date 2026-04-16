@@ -224,3 +224,293 @@ canvas {
 .stat-card:hover {
   transform: translateY(-4px);
 }
+
+/* ===== INTERACTIVE KPI CARDS ===== */
+
+/* Make clickable cards feel like buttons */
+.stats-grid a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* Smooth hover lift */
+.stat-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+}
+
+.stat-card:hover {
+  transform: translateY(-6px) scale(1.02);
+  box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+}
+
+/* Active filter highlight */
+.active-filter {
+  outline: 2px solid #3b82f6;
+}
+
+/* ===== TABLE IMPROVEMENTS ===== */
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th {
+  text-align: left;
+  padding: 10px;
+  color: #9ca3af;
+  font-weight: 700;
+}
+
+td {
+  padding: 10px;
+}
+
+/* Row hover */
+tbody tr:hover {
+  background: rgba(255,255,255,0.05);
+}
+
+/* ===== FADE IN ANIMATION ===== */
+
+.card {
+  animation: fadeIn 0.4s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.menu-btn {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.menu-dropdown {
+  display: none;
+  position: absolute;
+  right: 0;
+  top: 30px;
+  background: #111827;
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+  overflow: hidden;
+  z-index: 10;
+}
+
+.menu-dropdown a {
+  display: block;
+  padding: 10px 15px;
+  color: white;
+  text-decoration: none;
+}
+
+.menu-dropdown a:hover {
+  background: #1f2937;
+}
+
+.menu-dropdown .danger {
+  color: #ef4444;
+}
+
+td:hover .menu-dropdown {
+  display: block;
+}
+
+/* ===== ANIMATED LOGO ===== */
+
+.logo-animated {
+  font-size: 42px;
+  font-weight: 900;
+  text-align: center;
+  margin-bottom: 20px;
+
+  background: linear-gradient(90deg, #3b82f6, #22c55e, #a855f7);
+  background-size: 200% auto;
+  color: transparent;
+  background-clip: text;
+  -webkit-background-clip: text;
+
+  animation: fadeSlide 1s ease forwards, gradientMove 3s linear infinite;
+}
+
+/* Fade + slide in */
+@keyframes fadeSlide {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Moving gradient */
+@keyframes gradientMove {
+  to {
+    background-position: 200% center;
+  }
+}
+
+/* ===== AUTH PAGE LAYOUT ===== */
+
+.auth-wrapper {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  height: 90vh;
+}
+
+/* ===== LEFT SIDE ===== */
+.auth-left {
+  position: relative;
+  overflow: hidden;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 60px;
+
+  /* 🔥 Animated gradient background */
+  background: linear-gradient(270deg, #0f172a, #1e293b, #3b82f6, #22c55e);
+  background-size: 400% 400%;
+  animation: gradientBG 10s ease infinite;
+}
+
+/* Dark overlay for readability */
+.auth-left::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.7);
+}
+
+/* Keep content above overlay */
+.auth-left > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Logo styling */
+.logo-animated {
+  font-size: 48px;
+  font-weight: 900;
+  color: white;
+  text-shadow: 0 0 30px rgba(59,130,246,0.4);
+
+  animation: fadeSlide 1s ease forwards;
+}
+
+/* Tagline */
+.auth-tagline {
+  margin-top: 20px;
+  color: #cbd5f5;
+  font-size: 18px;
+  line-height: 1.6;
+  max-width: 400px;
+}
+
+/* ===== RIGHT SIDE ===== */
+.auth-right {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Card polish */
+.auth-card {
+  width: 100%;
+  max-width: 400px;
+  transition: 0.3s;
+}
+
+.auth-card:hover {
+  transform: translateY(-5px);
+}
+
+/* ===== ANIMATIONS ===== */
+
+/* Background movement */
+@keyframes gradientBG {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Logo entrance */
+@keyframes fadeSlide {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ===== RESPONSIVE (VERY IMPORTANT) ===== */
+
+@media (max-width: 900px) {
+  .auth-wrapper {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-left {
+    display: none; /* hide left side on mobile */
+  }
+
+  .auth-right {
+    padding: 20px;
+  }
+}
+
+/* ===== BUTTON LOADING SPINNER ===== */
+
+.spinner {
+  display: none;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* When loading */
+.btn.loading .spinner {
+  display: inline-block;
+}
+
+.btn.loading .btn-text {
+  display: none;
+}
+
+.btn.loading {
+  opacity: 0.8;
+  cursor: not-allowed;
+}
+
+/* Spin animation */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

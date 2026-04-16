@@ -1,0 +1,88 @@
+<!doctype html>
+<html>
+<head>
+  <title>InsightKPI | Verify 2FA</title>
+  <!-- Load the main stylesheet -->
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+
+<!-- TOP BAR with just the brand name -->
+<div class="topbar">
+  <div class="topbar__inner">
+    <div class="brand">InsightKPI</div>
+  </div>
+</div>
+
+<!-- TWO COLUMN LAYOUT matching the login page style -->
+<div class="auth-wrapper">
+
+  <!-- LEFT SIDE - decorative panel -->
+  <div class="auth-left">
+    <h1 class="logo-animated">InsightKPI</h1>
+    <p class="auth-tagline">
+      One more step.<br>
+      Keeping your data safe.
+    </p>
+  </div>
+
+  <!-- RIGHT SIDE - the 2FA code entry form -->
+  <div class="auth-right">
+    <div class="card auth-card">
+
+      <h2>Two-Factor Auth</h2>
+      <p class="subtitle">Enter the 6-digit code from your authenticator app</p>
+
+      <!-- Show any error messages for example invalid code -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+          <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endwith %}
+
+      <!-- Form to submit the 6 digit TOTP code -->
+      <form method="POST">
+
+        <div class="form-group">
+          <label>Authentication Code</label>
+          <!-- inputmode numeric shows a number keyboard on mobile -->
+          <!-- pattern ensures only 6 digits are accepted -->
+          <input
+            name="code"
+            type="text"
+            inputmode="numeric"
+            pattern="[0-9]{6}"
+            maxlength="6"
+            placeholder="000000"
+            autofocus
+            required
+            style="font-size: 24px; letter-spacing: 8px; text-align: center;">
+        </div>
+
+        <!-- Button shows a spinner while verifying -->
+        <button class="btn" id="submitBtn" style="width:100%; margin-top:8px;">
+          <span class="btn-text">Verify</span>
+          <span class="spinner"></span>
+        </button>
+
+        <!-- Link to go back if the user does not have their phone -->
+        <p class="subtitle" style="margin-top:14px; text-align:center;">
+          <a href="/login">Back to login</a>
+        </p>
+
+      </form>
+    </div>
+  </div>
+
+</div>
+
+<!-- When the form is submitted, show the spinner on the button -->
+<script>
+document.querySelector("form").addEventListener("submit", function () {
+  const btn = document.getElementById("submitBtn");
+  btn.classList.add("loading");
+});
+</script>
+
+</body>
+</html>

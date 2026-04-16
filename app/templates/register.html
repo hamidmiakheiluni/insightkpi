@@ -2,50 +2,90 @@
 <html>
 <head>
   <title>InsightKPI | Register</title>
+  <!-- Load the main stylesheet -->
   <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
 
+<!-- TOP BAR with just the brand name, no nav links on the register page -->
 <div class="topbar">
   <div class="topbar__inner">
     <div class="brand">InsightKPI</div>
   </div>
 </div>
 
-<div class="auth-container">
-  <div class="card auth-card">
+<!-- TWO COLUMN LAYOUT - left side is decorative, right side has the form -->
+<div class="auth-wrapper">
 
-    <h2>Create Account</h2>
-    <p class="subtitle">Start tracking your KPIs</p>
+  <!-- LEFT SIDE - animated gradient background with tagline -->
+  <div class="auth-left">
+    <h1 class="logo-animated">InsightKPI</h1>
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% for category, message in messages %}
-        <div class="flash {{ category }}">{{ message }}</div>
-      {% endfor %}
-    {% endwith %}
+    <p class="auth-tagline">
+      Track performance.<br>
+      Analyse trends.<br>
+      Grow smarter.
+    </p>
+  </div>
 
-    <form method="post" class="form">
+  <!-- RIGHT SIDE - the registration form -->
+  <div class="auth-right">
 
-      <div class="form-group">
-        <label>Email</label>
-        <input name="email" type="email" required>
-      </div>
+    <div class="card auth-card">
 
-      <div class="form-group">
-        <label>Password</label>
-        <input name="password" type="password" required>
-      </div>
+      <h2>Create Account</h2>
+      <p class="subtitle">Start tracking your KPIs today</p>
 
-      <button class="btn">Register</button>
+      <!-- Show any error or success messages from Flask -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+          <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endwith %}
 
-      <p class="subtitle">
-        Already have an account? <a href="/login">Login</a>
-      </p>
+      <!-- Registration form - submits username, email, and password -->
+      <form method="post">
 
-    </form>
+        <div class="form-group">
+          <label>Username</label>
+          <input name="username" type="text" required>
+        </div>
+
+        <div class="form-group">
+          <label>Email</label>
+          <input name="email" type="email" required>
+        </div>
+
+        <div class="form-group">
+          <label>Password</label>
+          <input name="password" type="password" required>
+        </div>
+
+        <!-- Button shows a spinner while the form is submitting -->
+        <button class="btn" id="submitBtn">
+          <span class="btn-text">Register</span>
+          <span class="spinner"></span>
+        </button>
+
+        <p class="subtitle" style="margin-top:10px;">
+          Already have an account? <a href="/login">Login</a>
+        </p>
+
+      </form>
+
+    </div>
 
   </div>
+
 </div>
+
+<!-- When the form is submitted, add the loading class to show the spinner -->
+<script>
+document.querySelector("form").addEventListener("submit", function () {
+  const btn = document.getElementById("submitBtn");
+  btn.classList.add("loading");
+});
+</script>
 
 </body>
 </html>
