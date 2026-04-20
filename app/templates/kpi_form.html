@@ -1,215 +1,86 @@
-<!doctype html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <!-- Page title changes depending on whether we are adding or editing -->
-  <title>InsightKPI | {{ "Edit KPI" if mode == "edit" else "Add KPI" }}</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-</head>
-<body>
+{% extends "base.html" %}
 
-<!-- TOP NAVIGATION BAR -->
-<div class="topbar">
-  <div class="topbar__inner">
-    <div class="brand">InsightKPI</div>
-    <div class="nav-links">
-      <a class="nav-link" href="{{ url_for('dash.home') }}">Home</a>
-      <a class="nav-link" href="{{ url_for('dash.dashboard') }}">Dashboard</a>
-      <a class="nav-link primary" href="{{ url_for('kpi.add_kpi') }}">Add KPI</a>
-      <a class="nav-link" href="{{ url_for('dash.help_page') }}">Help</a>
-      <a class="nav-link" href="{{ url_for('auth.logout') }}">Logout</a>
+{% block content %}
+
+<div class="card">
+  <h2>{{ "Edit KPI" if mode == "edit" else "Add KPI" }}</h2>
+  <p class="subtitle">Track your business performance with meaningful metrics</p>
+</div>
+
+<div class="card" style="max-width:900px; margin:auto;">
+
+  <form method="POST">
+
+    <div class="form-group">
+      <label>KPI Name</label>
+      <input name="kpi_name"
+             value="{{ entry.kpi_name if entry else '' }}"
+             placeholder="e.g. Revenue, Sales, Customer Growth"
+             required>
     </div>
-  </div>
-</div>
 
-<div class="container">
+    <div class="form-group">
+      <label>Date</label>
+      <input type="date"
+             name="kpi_date"
+             value="{{ entry.kpi_date.strftime('%Y-%m-%d') if entry else '' }}"
+             required>
+    </div>
 
-  <div class="card">
-    <!-- Heading changes depending on whether we are adding or editing -->
-    <h2>{{ "Edit KPI Entry" if mode == "edit" else "Add KPI" }}</h2>
-    <p class="subtitle">
-      Track a key business metric and see performance instantly.
-    </p>
+    <div class="form-group">
+      <label>Value</label>
+      <input type="number"
+             step="0.01"
+             name="value"
+             value="{{ entry.value if entry else '' }}"
+             required>
+    </div>
 
-    <!-- Show any error or success flash messages -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% for category, message in messages %}
-        <div class="flash {{ category }}">{{ message }}</div>
-      {% endfor %}
-    {% endwith %}
+    <div class="form-group">
+      <label>Target (optional)</label>
+      <input type="number"
+             step="0.01"
+             name="target_value"
+             value="{{ entry.target_value if entry else '' }}">
+    </div>
 
-    <!-- Main KPI form - used for both adding and editing -->
-    <form method="POST">
+    <div class="form-group">
+      <label>Direction</label>
+      <select name="direction">
+        <option value="higher"
+          {% if entry and entry.direction == "higher" %}selected{% endif %}>
+          Higher is better (e.g. Revenue)
+        </option>
+        <option value="lower"
+          {% if entry and entry.direction == "lower" %}selected{% endif %}>
+          Lower is better (e.g. Expenses)
+        </option>
+      </select>
+    </div>
 
-      <!-- KPI NAME - has autocomplete suggestions from the datalist -->
-      <div class="form-group">
-        <label>KPI Name</label>
-        <input list="kpiSuggestions" name="kpi_name"
-               placeholder="Sales, Profit, Customers..."
-               required
-               value="{{ entry.kpi_name if entry else '' }}">
+    <div class="form-group">
+      <label>Tolerance %</label>
+      <input type="number"
+             step="1"
+             name="tolerance_pct"
+             value="{{ entry.tolerance_pct if entry else 5 }}">
+      <small style="color: var(--muted);">
+        How close to target counts as "warning" (amber)
+      </small>
+    </div>
 
-        <!-- These are the suggested KPI names that appear as the user types -->
-        <datalist id="kpiSuggestions">
-          <option value="Sales">
-          <option value="Revenue">
-          <option value="Profit">
-          <option value="Customers">
-          <option value="Conversion Rate">
-        </datalist>
-      </div>
+    <div class="form-group">
+      <label>Notes (optional)</label>
+      <input name="notes"
+             value="{{ entry.notes if entry else '' }}">
+    </div>
 
-      <!-- DATE - the date this KPI value applies to -->
-      <div class="form-group">
-        <label>Date</label>
-        <input type="date" name="kpi_date"
-               required
-               value="{{ entry.kpi_date.isoformat() if entry else '' }}">
-      </div>
+    <button class="btn" style="width:100%; margin-top:15px;">
+      {{ "Update KPI" if mode == "edit" else "Save KPI" }}
+    </button>
 
-      <!-- VALUE - the actual number for this KPI -->
-      <div class="form-group">
-        <label>Value</label>
-        <input type="number" step="0.01" name="value"
-               placeholder="e.g. 1200"
-               required
-               value="{{ entry.value if entry else '' }}">
-        <p class="small">Tip: Enter a realistic KPI value</p>
-      </div>
-
-      <!-- NOTES - optional context the user can add -->
-      <div class="form-group">
-        <label>Notes (optional)</label>
-        <input type="text" name="notes"
-               placeholder="Any context..."
-               value="{{ entry.notes if entry else '' }}">
-      </div>
-
-      <hr>
-
-      <!-- PERFORMANCE SETTINGS -->
-      <!-- These fields control how the green amber red status is calculated -->
-      <h3>Performance Settings</h3>
-      <p class="subtitle">
-        Add a target and rule so InsightKPI can calculate performance automatically.
-      </p>
-
-      <!-- TARGET - the goal value this KPI is trying to reach -->
-      <div class="form-group">
-        <label>Target (optional)</label>
-        <input type="number" step="0.01" name="target_value"
-               placeholder="e.g. 1500"
-               value="{{ entry.target_value if entry else '' }}">
-      </div>
-
-      <!-- DIRECTION - whether a higher or lower value is better -->
-      <div class="form-group">
-        <label>Direction</label>
-        <select name="direction">
-          <option value="higher" {% if entry and entry.direction == "higher" %}selected{% endif %}>Higher is better</option>
-          <option value="lower" {% if entry and entry.direction == "lower" %}selected{% endif %}>Lower is better</option>
-        </select>
-      </div>
-
-      <!-- TOLERANCE - how close to the target counts as amber instead of red -->
-      <div class="form-group">
-        <label>Tolerance (%)</label>
-        <input type="number" step="0.1" name="tolerance_pct"
-               value="{{ entry.tolerance_pct if entry else 5 }}">
-      </div>
-
-      <!-- STATUS GUIDE - explains what each colour means -->
-      <div class="card" style="margin-top:15px;">
-        <div class="small"><span class="badge green">GREEN</span> On target</div>
-        <div class="small" style="margin-top:8px;"><span class="badge amber">AMBER</span> Close to target</div>
-        <div class="small" style="margin-top:8px;"><span class="badge red">RED</span> Needs attention</div>
-      </div>
-
-      <!-- LIVE STATUS PREVIEW -->
-      <!-- Updates in real time as the user fills in the form -->
-      <div class="card" id="statusPreview" style="margin-top:15px;">
-        <h3>Live Status Preview</h3>
-        <p class="subtitle">Updates as you type</p>
-
-        <div id="statusResult" class="badge" style="margin-top:10px;">
-          Waiting for input...
-        </div>
-      </div>
-
-      <!-- QUICK FILL button fills in example data for a demo -->
-      <div style="margin-top:10px;">
-        <button type="button" class="btn" onclick="quickFill()">Quick Demo Data</button>
-      </div>
-
-      <!-- SUBMIT and CANCEL buttons -->
-      <div style="display:flex; gap:10px; margin-top:15px;">
-        <button class="btn" type="submit">
-          {{ "Save Changes" if mode == "edit" else "Save KPI" }}
-        </button>
-
-        <a class="btn" href="{{ url_for('dash.dashboard') }}" style="background:#111827;">
-          Cancel
-        </a>
-      </div>
-
-    </form>
-
-  </div>
+  </form>
 
 </div>
 
-<script>
-// This function calculates and shows the status colour in real time
-function updateStatus() {
-  // Read the current values from the form fields
-  const value = parseFloat(document.querySelector('[name="value"]').value);
-  const target = parseFloat(document.querySelector('[name="target_value"]').value);
-  const direction = document.querySelector('[name="direction"]').value;
-  const tolerance = parseFloat(document.querySelector('[name="tolerance_pct"]').value);
-
-  const result = document.getElementById("statusResult");
-
-  // If value or target are missing we cannot calculate a status yet
-  if (!value || !target) {
-    result.innerHTML = "Waiting for input...";
-    result.className = "badge";
-    return;
-  }
-
-  // Calculate the tolerance as an actual number
-  const tol = (tolerance / 100) * target;
-  let status = "UNKNOWN";
-
-  // Apply the same logic as evaluate_status in dashboard.py
-  if (direction === "higher") {
-    if (value >= target) status = "GREEN";
-    else if (value >= target - tol) status = "AMBER";
-    else status = "RED";
-  } else {
-    if (value <= target) status = "GREEN";
-    else if (value <= target + tol) status = "AMBER";
-    else status = "RED";
-  }
-
-  // Update the badge text and colour class
-  result.innerHTML = status;
-  result.className = "badge " + status.toLowerCase();
-}
-
-// Run the status check every time the user changes any input
-document.querySelectorAll("input, select").forEach(el => {
-  el.addEventListener("input", updateStatus);
-});
-
-// Fill in example values so the user can see how the form works
-function quickFill() {
-  document.querySelector('[name="kpi_name"]').value = "Sales";
-  document.querySelector('[name="value"]').value = 1200;
-  document.querySelector('[name="target_value"]').value = 1500;
-  document.querySelector('[name="tolerance_pct"]').value = 5;
-  updateStatus();
-}
-</script>
-
-</body>
-</html>
+{% endblock %}

@@ -1,74 +1,71 @@
-# This file handles the home page and the main dashboard page
-# It also contains the logic for calculating KPI status colours
-
 from flask import Blueprint, render_template, request
 from flask_login import login_required, current_user
 from collections import defaultdict
 from .models import KPIEntry
 
-# Create the dashboard blueprint
+# Create a blueprint for dashboard routes
 dash_bp = Blueprint("dash", __name__)
 
 
-# STATUS LOGIC
-# This function works out whether a KPI is green, amber, or red
-# based on its value, target, direction, and tolerance
+# ================= STATUS LOGIC =================
+# This function decides whether a KPI is green, amber or red
 def evaluate_status(value, target, direction, tolerance_pct):
-    # If no target is set we cannot calculate a status
     if target is None:
-        return "unknown"
+        return None
 
-    # Calculate the tolerance as an actual number based on the percentage
     tol = (tolerance_pct or 0) / 100 * target
 
-    # For KPIs where higher is better
     if direction == "higher":
         if value >= target:
             return "green"
         elif value >= (target - tol):
-            # Within the tolerance buffer so amber
             return "amber"
         else:
             return "red"
     else:
-        # For KPIs where lower is better
         if value <= target:
             return "green"
         elif value <= (target + tol):
-            # Within the tolerance buffer so amber
             return "amber"
         else:
             return "red"
 
 
-# This function calculates the percentage change between two values
+# ================= TREND =================
 def pct_change(current, previous):
-    # Cannot calculate if there is no previous value
     if previous is None or previous == 0:
         return None
     return round(((current - previous) / previous) * 100, 2)
 
 
-# HOME PAGE
-# Shows a quick summary of the user's KPIs
+# ================= INSIGHT =================
+def get_insight(change):
+    if change is None:
+        return "No trend yet"
+    if change > 5:
+        return "Strong upward trend"
+    elif change > 0:
+        return "Improving steadily"
+    elif change < -5:
+        return "Declining significantly"
+    else:
+        return "Stable performance"
+
+
+# ================= HOME =================
 @dash_bp.route("/")
 @login_required
 def home():
-    # Get all KPI entries for the logged in user
     entries = KPIEntry.query.filter_by(user_id=current_user.id).all()
-
-    # Count how many unique KPI names the user has
     total_kpis = len(set(e.kpi_name for e in entries))
 
     green_count = 0
     red_count = 0
 
-    # Group entries by KPI name so we can find the latest one for each
     grouped = defaultdict(list)
     for e in entries:
         grouped[e.kpi_name].append(e)
 
-    # For each KPI check the status of the most recent entry
     for name, items in grouped.items():
         latest = sorted(items, key=lambda x: x.kpi_date)[-1]
 
@@ -92,90 +89,92 @@ def home():
     )
 
 
-# DASHBOARD PAGE
-# Shows all KPI data with charts, filters, and comparison tools
+# ================= DASHBOARD =================
 @dash_bp.route("/dashboard")
 @login_required
 def dashboard():
 
-    # GET FILTERS
-    # Read any filter values from the URL
+    # View (chart / cards / multiples)
+    view = request.args.get("view", "chart")
+
+    # Chart type (line / bar)
+    chart_type = request.args.get("chart_type", "line")
+
     selected_kpi = request.args.get("kpi_name")
     kpi1 = request.args.get("kpi1")
     kpi2 = request.args.get("kpi2")
     start = request.args.get("start")
     end = request.args.get("end")
+    compare_type = request.args.get("compare_type", "bar")
 
-    # The type of chart to show, defaults to line
-    compare_type = request.args.get("compare_type", "line")
-
-    # Start building the database query for this user's KPIs
     query = KPIEntry.query.filter_by(user_id=current_user.id)
 
-    # Apply the KPI name filter if one was selected
     if selected_kpi:
         query = query.filter(KPIEntry.kpi_name.ilike(f"%{selected_kpi}%"))
 
-    # Apply the start date filter if one was set
     if start:
         query = query.filter(KPIEntry.kpi_date >= start)
 
-    # Apply the end date filter if one was set
     if end:
         query = query.filter(KPIEntry.kpi_date <= end)
 
-    # Run the query and sort results by date oldest first
     entries = query.order_by(KPIEntry.kpi_date.asc()).all()
 
-    # CHART DATA
-    # Build the data structure that Chart.js needs to draw the graphs
+    # ================= CHART DATA =================
     chart_data = {}
+    labels = []
+    values = []
 
     for e in entries:
-        # If the user is comparing two KPIs, skip any that are not selected
         if kpi1 or kpi2:
             if e.kpi_name not in [kpi1, kpi2]:
                 continue
 
         name = e.kpi_name
 
-        # Create an entry in chart_data for this KPI if it does not exist yet
         if name not in chart_data:
-            chart_data[name] = {
-                "labels": [],
-                "values": []
-            }
+            chart_data[name] = {"labels": [], "values": []}
 
-        # Add the date as a label and the value to the chart data
-        chart_data[name]["labels"].append(
-            e.kpi_date.strftime("%Y-%m-%d") if e.kpi_date else ""
-        )
+        date_str = e.kpi_date.strftime("%Y-%m-%d") if e.kpi_date else ""
+
+        chart_data[name]["labels"].append(date_str)
         chart_data[name]["values"].append(float(e.value or 0))
 
-    # GROUP KPIs
-    # Group entries by name so we can calculate stats for each KPI
+    # 🔥 IMPROVED: safer average calculation (no crashes)
+    date_group = defaultdict(list)
+    for e in entries:
+        if e.kpi_date:
+            key = e.kpi_date.strftime("%Y-%m-%d")
+            date_group[key].append(float(e.value or 0))
+
+    for d in sorted(date_group.keys()):
+        vals = date_group[d]
+        if vals:
+            labels.append(d)
+            avg = sum(vals) / len(vals)
+            values.append(round(avg, 2))
+
+    # ================= GROUP KPIs =================
     grouped = defaultdict(list)
     for e in entries:
         grouped[e.kpi_name].append(e)
 
     card_stats = {}
-    behind_target = []
 
     for name, items in grouped.items():
-        # Sort by date so the most recent is last
         items = sorted(items, key=lambda x: x.kpi_date)
+        vals = [float(i.value or 0) for i in items if i.value is not None]
 
-        vals = [float(i.value or 0) for i in items]
+        if not vals:
+            continue
+
         latest = vals[-1]
         avg = sum(vals) / len(vals)
-
-        # Get the previous value to calculate the trend
         prev = vals[-2] if len(vals) > 1 else None
         change = pct_change(latest, prev)
 
         last_entry = items[-1]
 
-        # Work out the green amber red status for this KPI
         status = evaluate_status(
             latest,
             last_entry.target_value,
@@ -183,46 +182,57 @@ def dashboard():
             last_entry.tolerance_pct
         )
 
-        # Store the stats for this KPI to pass to the template
+        insight = get_insight(change)
+
         card_stats[name] = {
             "latest": latest,
-            "avg": avg,
-            "trend_pct": change,
-            "status": status
+            "avg": round(avg, 2),
+            "min": min(vals),
+            "max": max(vals),
+            "change": change,
+            "status": status,
+            "insight": insight
         }
 
-        # Add to the behind target list if red or amber
-        if status in ["red", "amber"]:
-            behind_target.append({
-                "name": name,
-                "latest": latest,
-                "status": status
-            })
+    # ================= MULTIPLE SERIES =================
+    # 🔥 IMPROVED: ensures clean data for frontend charts
+    series = {}
+    for name, items in grouped.items():
+        cleaned = []
 
-    # BEST AND WORST KPI
-    # Find which KPI has the best and worst trend percentage
-    worst_kpi = None
-    best_kpi = None
+        for i in sorted(items, key=lambda x: x.kpi_date):
+            if i.kpi_date:
+                cleaned.append(
+                    (i.kpi_date.strftime("%Y-%m-%d"), float(i.value or 0))
+                )
 
-    # Only consider KPIs that have a trend value to compare
-    valid_trends = {k: v for k, v in card_stats.items() if v["trend_pct"] is not None}
+        if cleaned:
+            series[name] = cleaned
 
-    if valid_trends:
-        worst_kpi = min(valid_trends.items(), key=lambda x: x[1]["trend_pct"])[0]
-        best_kpi = max(valid_trends.items(), key=lambda x: x[1]["trend_pct"])[0]
+    # ================= COMPARISON =================
+    comparison_summary = None
 
-    # Count how many KPIs are in the red
-    bad_count = len([k for k in card_stats.values() if k["status"] == "red"])
+    if kpi1 and kpi2:
+        if kpi1 in card_stats and kpi2 in card_stats:
+
+            val1 = card_stats[kpi1]["latest"]
+            val2 = card_stats[kpi2]["latest"]
+
+            diff = round(val1 - val2, 2)
+            pct = round((diff / val2) * 100, 2) if val2 != 0 else None
+
+            if diff > 0:
+                comparison_summary = f"{kpi1} is higher than {kpi2} by {abs(diff)} ({pct}% difference)"
+            elif diff < 0:
+                comparison_summary = f"{kpi2} is higher than {kpi1} by {abs(diff)} ({abs(pct)}% difference)"
+            else:
+                comparison_summary = f"{kpi1} and {kpi2} are equal"
+
     kpi_names = list(grouped.keys())
 
-    # Send all the data to the dashboard template
     return render_template(
         "dashboard.html",
         card_stats=card_stats,
-        behind_target=behind_target,
-        worst_kpi=worst_kpi,
-        best_kpi=best_kpi,
-        bad_count=bad_count,
         chart_data=chart_data,
         entries=entries,
         kpi_names=kpi_names,
@@ -231,12 +241,19 @@ def dashboard():
         kpi2=kpi2,
         start=start,
         end=end,
-        compare_type=compare_type
+        compare_type=compare_type,
+        comparison_summary=comparison_summary,
+
+        # frontend data
+        labels=labels,
+        values=values,
+        series=series,
+        view=view,
+        chart_type=chart_type
     )
 
 
-# HELP PAGE
-# Just shows the static help page
+# ================= HELP PAGE =================
 @dash_bp.route("/help")
 @login_required
 def help_page():

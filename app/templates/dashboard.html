@@ -1,236 +1,258 @@
-{% extends "base.html" %}
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>InsightKPI | Dashboard</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-{% block content %}
+  <!-- Capture dashboard for download -->
+  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 
-<!-- DASHBOARD PAGE HEADER -->
-<div class="card">
-  <h2>Dashboard</h2>
-  <p class="subtitle">Monitor KPI performance and business insights</p>
-</div>
+  <style>
+    .view-toggle {
+      display: flex;
+      gap: 10px;
+      margin: 15px 0 20px 0;
+    }
 
-<!-- KPI CARDS -->
-<!-- One card per KPI showing the latest value, average, and status colour -->
-<!-- Clicking a card filters the dashboard to show only that KPI -->
-<div class="stats-grid">
-  {% for name, s in card_stats.items() %}
-    <a href="{{ url_for('dash.dashboard') }}?kpi_name={{ name }}" style="text-decoration:none;">
-      <div class="stat-card status-{{ s.status }}">
-        <div class="stat-title">{{ name }}</div>
-        <div class="stat-value">{{ "%.2f"|format(s.latest) }}</div>
-        <div class="small">Avg: {{ "%.2f"|format(s.avg) }}</div>
-        <!-- Badge colour matches the status - green, amber, or red -->
-        <span class="badge {{ s.status }}">{{ s.status|upper }}</span>
-      </div>
-    </a>
-  {% endfor %}
-</div>
+    .view-btn {
+      padding: 8px 14px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.05);
+      color: #cbd5f5;
+      text-decoration: none;
+      font-weight: 600;
+      transition: 0.2s;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
 
-<!-- KPI COMPARISON FORM -->
-<!-- Lets the user pick two KPIs and a chart type to compare them -->
-<div class="card">
-  <h3>Compare KPIs</h3>
+    .view-btn:hover {
+      background: rgba(37,99,235,0.2);
+      color: white;
+    }
 
-  <!-- Submits as a GET request so filters show in the URL -->
-  <form method="GET" class="filter-form">
+    .view-btn.active {
+      background: #2563eb;
+      color: white;
+      border: none;
+    }
 
-    <!-- First KPI dropdown -->
-    <select name="kpi1">
-      <option value="">Select KPI 1</option>
-      {% for name in kpi_names %}
-        <!-- Keep the previously selected value when the page reloads -->
-        <option value="{{ name }}" {% if name == kpi1 %}selected{% endif %}>
-          {{ name }}
-        </option>
-      {% endfor %}
-    </select>
+    .download-btn {
+      display: inline-block;
+      padding: 10px 18px;
+      border-radius: 8px;
+      background: #2563eb;
+      color: white;
+      font-weight: 700;
+      text-decoration: none;
+      margin-bottom: 20px;
+    }
 
-    <!-- Second KPI dropdown -->
-    <select name="kpi2">
-      <option value="">Select KPI 2</option>
-      {% for name in kpi_names %}
-        <option value="{{ name }}" {% if name == kpi2 %}selected{% endif %}>
-          {{ name }}
-        </option>
-      {% endfor %}
-    </select>
+    /* 🔥 NEW: nicer small multiples layout */
+    .mini-card {
+      padding: 14px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.03);
+    }
 
-    <!-- Chart type dropdown - line, bar, or summary cards -->
-    <select name="compare_type">
-      <option value="line" {% if compare_type == "line" %}selected{% endif %}>Line Chart</option>
-      <option value="bar" {% if compare_type == "bar" %}selected{% endif %}>Bar Chart</option>
-      <option value="summary" {% if compare_type == "summary" %}selected{% endif %}>Summary Cards</option>
-    </select>
+    .mini-title {
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
 
-    <button class="btn">Compare</button>
+    .mini-value {
+      font-size: 18px;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+  </style>
+</head>
+<body>
 
-    <!-- Reset clears all filters and goes back to the default dashboard -->
-    <a href="{{ url_for('dash.dashboard') }}" class="btn" style="background:#111827;">
-      Reset
-    </a>
-
-  </form>
-</div>
-
-<!-- EXPORT BUTTONS -->
-<!-- Let the user download their data -->
-<div style="margin:15px 0; display:flex; gap:10px; flex-wrap:wrap;">
-  <a href="/export/csv" class="btn">Export CSV</a>
-  <a href="/export/pdf" class="btn" style="background:#111827;">Export PDF</a>
-</div>
-
-<!-- SUMMARY VIEW -->
-<!-- Only shown when the user picks summary as the comparison type -->
-{% if compare_type == "summary" and kpi1 and kpi2 %}
-<div class="card">
-  <h3>KPI Comparison Summary</h3>
-
-  <div class="stats-grid">
-    <!-- Card for the first selected KPI -->
-    <div class="stat-card">
-      <div class="stat-title">{{ kpi1 }}</div>
-      <div class="stat-value">{{ card_stats[kpi1].latest if kpi1 in card_stats else "-" }}</div>
-      {% if kpi1 in card_stats %}
-        <span class="badge {{ card_stats[kpi1].status }}">
-          {{ card_stats[kpi1].status|upper }}
-        </span>
-      {% endif %}
+<div class="topbar">
+  <div class="topbar__inner">
+    <div class="brand">
+      <span class="brand-badge"></span>
+      InsightKPI
     </div>
-
-    <!-- Card for the second selected KPI -->
-    <div class="stat-card">
-      <div class="stat-title">{{ kpi2 }}</div>
-      <div class="stat-value">{{ card_stats[kpi2].latest if kpi2 in card_stats else "-" }}</div>
-      {% if kpi2 in card_stats %}
-        <span class="badge {{ card_stats[kpi2].status }}">
-          {{ card_stats[kpi2].status|upper }}
-        </span>
-      {% endif %}
+    <div class="nav-links">
+      <a class="nav-link" href="/">Home</a>
+      <a class="nav-link" href="/dashboard">Dashboard</a>
+      <a class="nav-link primary" href="/kpi/add">Add KPI</a>
+      <a class="nav-link" href="/help">Help</a>
+      <a class="nav-link" href="/logout">Logout</a>
     </div>
   </div>
 </div>
-{% endif %}
 
-<!-- KPI DATA TABLE -->
-<!-- Lists all matching KPI entries with options to view, edit, or delete -->
-<div class="card">
-  <h3>KPI Data Table</h3>
+<div class="container">
 
-  {% if entries %}
-    <table>
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>KPI</th>
-          <th>Value</th>
-          <th></th>
-        </tr>
-      </thead>
+  <div class="card" id="exportArea">
 
-      <tbody>
-        {% for e in entries %}
-        <tr>
-          <td>{{ e.kpi_date }}</td>
-          <td>{{ e.kpi_name }}</td>
-          <td>{{ e.value }}</td>
+    <h2>Dashboard</h2>
+    <p class="subtitle">Track, visualise, and evaluate KPI performance against targets.</p>
 
-          <!-- Three dot menu button for each row -->
-          <td style="position:relative;">
-            <button class="menu-btn">...</button>
+    <!-- KPI SUMMARY -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-title">Total KPIs</div>
+        <div class="stat-value">{{ card_stats|length }}</div>
+      </div>
 
-            <!-- Dropdown menu appears on hover -->
-            <div class="menu-dropdown">
-              <a href="{{ url_for('kpi.view_kpi', kpi_id=e.id) }}">View</a>
-              <a href="{{ url_for('kpi.edit_kpi', kpi_id=e.id) }}">Edit</a>
-              <!-- Delete asks for confirmation before proceeding -->
-              <a href="{{ url_for('kpi.delete_kpi', kpi_id=e.id) }}"
-                 onclick="return confirm('Delete this KPI?');"
-                 class="danger">
-                 Delete
-              </a>
+      <div class="stat-card">
+        <div class="stat-title">On Track</div>
+        <div class="stat-value">
+          {{ card_stats.values() | selectattr('status','equalto','green') | list | length }}
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-title">Warning</div>
+        <div class="stat-value">
+          {{ card_stats.values() | selectattr('status','equalto','amber') | list | length }}
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-title">Behind</div>
+        <div class="stat-value">
+          {{ card_stats.values() | selectattr('status','equalto','red') | list | length }}
+        </div>
+      </div>
+    </div>
+
+    <h3>KPI Views</h3>
+
+    <div class="view-toggle">
+      <a class="view-btn {{ 'active' if view=='chart' else '' }}" href="/dashboard?view=chart&chart_type=line">Line</a>
+      <a class="view-btn {{ 'active' if view=='chart' and chart_type=='bar' else '' }}" href="/dashboard?view=chart&chart_type=bar">Bar</a>
+      <a class="view-btn {{ 'active' if view=='cards' else '' }}" href="/dashboard?view=cards">Cards</a>
+      <a class="view-btn {{ 'active' if view=='multiples' else '' }}" href="/dashboard?view=multiples">Small Multiples</a>
+    </div>
+
+    {% if entries|length == 0 %}
+      <div class="flash info">
+        No KPI data yet — add your first KPI.
+      </div>
+    {% else %}
+
+      <a href="#" onclick="downloadPDF(event)" class="download-btn">Download</a>
+
+      <!-- ================= CHART ================= -->
+      {% if view == "chart" %}
+        <canvas id="kpiChart"></canvas>
+
+        <script>
+          new Chart(document.getElementById("kpiChart"), {
+            type: "{{ chart_type or 'line' }}",
+            data: {
+              labels: {{ labels | tojson }},
+              datasets: [{
+                label: "KPI Trend",
+                data: {{ values | tojson }},
+                borderColor: "#2563eb",
+                backgroundColor: "rgba(37,99,235,0.2)",
+                fill: true,
+                tension: 0.4
+              }]
+            }
+          });
+        </script>
+      {% endif %}
+
+      <!-- ================= CARDS ================= -->
+      {% if view == "cards" %}
+        <div style="display:grid; gap:14px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));">
+          {% for name, s in card_stats.items() %}
+            <div class="card">
+              <b>{{ name }}</b>
+              <div>Latest: {{ s.latest }}</div>
+              <div>Avg: {{ s.avg }}</div>
+              <div>Min: {{ s.min }}</div>
+              <div>Max: {{ s.max }}</div>
             </div>
-          </td>
+          {% endfor %}
+        </div>
+      {% endif %}
 
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  {% endif %}
+      <!-- ================= SMALL MULTIPLES (FIXED) ================= -->
+      {% if view == "multiples" %}
+        <div style="display:grid; gap:14px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));">
+
+          {% for name, points in series.items() %}
+            <div class="mini-card">
+              <div class="mini-title">{{ name }}</div>
+              <div class="mini-value">{{ points[-1][1] }}</div>
+              <canvas id="mini_{{ loop.index }}"></canvas>
+            </div>
+          {% endfor %}
+
+        </div>
+
+        <script>
+          const series = {{ series | tojson }};
+          let i = 1;
+
+          for (const [name, points] of Object.entries(series)) {
+
+            new Chart(document.getElementById(`mini_${i}`), {
+              type: "bar",  // 🔥 CHANGED (makes it visually different)
+              data: {
+                labels: points.map(p => p[0]),
+                datasets: [{
+                  data: points.map(p => p[1]),
+                  backgroundColor: "rgba(37,99,235,0.5)"
+                }]
+              },
+              options: {
+                plugins: { legend: { display: false } },
+                scales: { x: { display: false }, y: { display: false } }
+              }
+            });
+
+            i++;
+          }
+        </script>
+      {% endif %}
+
+    {% endif %}
+
+  </div>
 </div>
 
-<!-- CHART SECTION -->
-<!-- Hidden when the user picks summary view because a chart is not needed -->
-{% if compare_type != "summary" %}
-<div class="card">
-  <h3>KPI Trends</h3>
-
-  <p class="subtitle">
-    Tip: Add multiple entries over time to see trends more clearly.
-  </p>
-
-  <!-- Chart.js draws the chart inside this canvas element -->
-  <canvas id="kpiChart"></canvas>
-</div>
-{% endif %}
-
+<!-- DOWNLOAD -->
 <script>
-// Get the chart data passed from dashboard.py
-const chartData = {{ chart_data | tojson }};
-const compareType = "{{ compare_type }}";
+function downloadPDF(event) {
+  event.preventDefault();
 
-const datasets = [];
-// Four colours to use for different KPI lines
-const colors = ["#3b82f6", "#22c55e", "#f59e0b", "#ef4444"];
+  const canvas = document.getElementById("kpiChart");
 
-let i = 0;
-let hasMultiplePoints = false;
-
-// Build a dataset for each KPI to pass to Chart.js
-for (const kpi in chartData) {
-  // Check if any KPI has more than one data point
-  if (chartData[kpi].values.length > 1) {
-    hasMultiplePoints = true;
+  if (canvas) {
+    const image = canvas.toDataURL("image/png", 1.0);
+    send(image);
+  } else {
+    html2canvas(document.getElementById("exportArea")).then(c => {
+      send(c.toDataURL("image/png"));
+    });
   }
-
-  datasets.push({
-    label: kpi,
-    data: chartData[kpi].values,
-    borderColor: colors[i % colors.length],
-    backgroundColor: colors[i % colors.length],
-    tension: 0.4,
-    pointRadius: 6,
-    pointHoverRadius: 8,
-    fill: false
-  });
-  i++;
 }
 
-// Use the dates from the first KPI as the x axis labels
-const labels = Object.values(chartData)[0]?.labels || [];
+function send(image) {
+  const form = document.createElement("form");
+  form.method = "POST";
+  form.action = "/export/pdf";
 
-// If there is only one data point, switch to a bar chart automatically
-// because a line chart needs at least two points to be useful
-let finalType = compareType;
-if (!hasMultiplePoints && compareType === "line") {
-  finalType = "bar";
-}
+  const input = document.createElement("input");
+  input.type = "hidden";
+  input.name = "chart_image";
+  input.value = image;
 
-// Only render the chart if there is data and we are not in summary mode
-if (datasets.length > 0 && compareType !== "summary") {
-  new Chart(document.getElementById("kpiChart"), {
-    type: finalType,
-    data: { labels, datasets },
-    options: {
-      plugins: {
-        legend: { display: true }
-      },
-      scales: {
-        y: {
-          beginAtZero: true
-        }
-      }
-    }
-  });
+  form.appendChild(input);
+  document.body.appendChild(form);
+  form.submit();
 }
 </script>
 
-{% endblock %}
+</body>
+</html>
